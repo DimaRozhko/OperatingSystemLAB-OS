@@ -14,6 +14,7 @@ type process struct {
 	executTime int
 	remainTime int
 	name       string
+	performed  bool
 }
 
 func processCreator(executTime int, remainTime int, name string) process {
@@ -21,6 +22,7 @@ func processCreator(executTime int, remainTime int, name string) process {
 		executTime: executTime,
 		remainTime: remainTime,
 		name:       name,
+		performed:  false,
 	}
 }
 
@@ -89,9 +91,8 @@ func printAllQueue(queue1 []process, queue2 []process, queue3 []process) {
 // }
 
 func queueThreadRR(queue []process) {
-	var reprat bool = true
 	var emptyProcessCounter int = 0
-	for reprat {
+	for emptyProcessCounter != len(queue) {
 		emptyProcessCounter = 0
 		for i, process := range queue {
 			if process.remainTime > 0 {
@@ -101,7 +102,9 @@ func queueThreadRR(queue []process) {
 				fmt.Print("\t->\t")
 				mutex.Lock()
 				process.remainTime = process.remainTime - process.executTime
+				queue[i].performed = true
 				queue[i].remainTime = process.remainTime
+				queue[i].performed = false
 				mutex.Unlock()
 				fmt.Println(process)
 				// fmt.Print("\tQ3")
@@ -110,8 +113,22 @@ func queueThreadRR(queue []process) {
 				emptyProcessCounter++
 			}
 		}
-		if emptyProcessCounter == len(queue) {
-			break
+	}
+	for i, process := range queue3SRTF {
+		if process.executTime > 0 && !process.performed {
+			queue3SRTF[i] = queue[0]
+			queue[0] = process
+			queue[0].executTime = queue[1].executTime
+			for queue[0].remainTime > 0 {
+				time.Sleep(time.Duration(time.Duration(queue[0].executTime) * time.Millisecond))
+				fmt.Print(queue[0].name + "\t")
+				fmt.Print(queue[0])
+				mutex.Lock()
+				queue[0].remainTime = queue[0].remainTime - queue[0].executTime
+				mutex.Unlock()
+				fmt.Print("\t->\t")
+				fmt.Println(queue[0])
+			}
 		}
 	}
 	waittime.Done()
@@ -119,28 +136,35 @@ func queueThreadRR(queue []process) {
 
 func queueThreadSRTF(queue []process) {
 	var (
-		executionIdQ3SRTF = 0
-		minRemainQ3SRTF   = maxRemainTime
+		executionIdQ3SRTF   = 0
+		minRemainQ3SRTF     = 0
+		emptyProcessCounter = 0
 	)
-	for i, process := range queue {
-		if process.remainTime < minRemainQ3SRTF {
-			executionIdQ3SRTF = i
-			minRemainQ3SRTF = process.remainTime
+	for emptyProcessCounter != len(queue) {
+		minRemainQ3SRTF = maxRemainTime
+		for i, process := range queue {
+			if process.remainTime < minRemainQ3SRTF && process.remainTime > 0 {
+				executionIdQ3SRTF = i
+				minRemainQ3SRTF = process.remainTime
+			}
 		}
-	}
-	for queue[executionIdQ3SRTF].remainTime > 0 {
-		time.Sleep(time.Duration(queue[executionIdQ3SRTF].executTime) * time.Millisecond)
-		fmt.Print(queue[executionIdQ3SRTF].name + "\t")
-		fmt.Print(queue[executionIdQ3SRTF])
-		mutex.Lock()
-		queue[executionIdQ3SRTF].remainTime = queue[executionIdQ3SRTF].remainTime - queue[executionIdQ3SRTF].executTime
-		mutex.Unlock()
-		fmt.Print("\t->\t")
-		fmt.Println(queue[executionIdQ3SRTF])
-		// fmt.Print("\tQ1")
-		// fmt.Println(queue1RR)
-		// fmt.Print("\tQ2")
-		// fmt.Println(queue2RR)
+		queue[executionIdQ3SRTF].performed = true
+		for queue[executionIdQ3SRTF].remainTime > 0 {
+			time.Sleep(time.Duration(queue[executionIdQ3SRTF].executTime) * time.Millisecond)
+			fmt.Print(queue[executionIdQ3SRTF].name + "\t")
+			fmt.Print(queue[executionIdQ3SRTF])
+			mutex.Lock()
+			queue[executionIdQ3SRTF].remainTime = queue[executionIdQ3SRTF].remainTime - queue[executionIdQ3SRTF].executTime
+			mutex.Unlock()
+			fmt.Print("\t->\t")
+			fmt.Println(queue[executionIdQ3SRTF])
+			// fmt.Print("\tQ1")
+			// fmt.Println(queue1RR)
+			// fmt.Print("\tQ2")
+			// fmt.Println(queue2RR)
+		}
+		queue[executionIdQ3SRTF].performed = false
+		emptyProcessCounter++
 	}
 	waittime.Done()
 }
