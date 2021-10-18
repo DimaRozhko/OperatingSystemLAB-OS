@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -25,12 +26,17 @@ func processCreator(executTime int, remainTime int, name string) process {
 
 var queue1RR, queue2RR, queue3SRTF []process
 
+var waittime sync.WaitGroup
+
+var mutex sync.Mutex
+
 const (
 	numQueueProcess = 3
-	minExecutTime   = 50
-	maxExecutTime   = 1000
+	quantQueue1     = 50
+	quantQueue2     = 100
+	maxExecutTime   = 200
 	minRemainTime   = 1000
-	maxRemainTime   = 1000000
+	maxRemainTime   = 5000
 	nameQ1RR        = "Q1RR"
 	nameQ2RR        = "Q2RR"
 	nameQ3SRTF      = "Q3SRTF"
@@ -77,21 +83,94 @@ func printAllQueue(queue1 []process, queue2 []process, queue3 []process) {
 	printRowTable(queue3, nameQ3SRTF)
 }
 
+// func runProcess(queue []process, index int) {
+// 	queue[index] = processCreator(queue[index].executTime,
+// 		queue[index].remainTime-queue[index].executTime, queue[index].name)
+// }
+
+func queueThreadRR(queue []process) {
+	var reprat bool = true
+	var emptyProcessCounter int = 0
+	for reprat {
+		emptyProcessCounter = 0
+		for i, process := range queue {
+			if process.remainTime > 0 {
+				time.Sleep(time.Duration(process.executTime) * time.Millisecond)
+				fmt.Print(process.name + "\t")
+				fmt.Print(process)
+				fmt.Print("\t->\t")
+				mutex.Lock()
+				process.remainTime = process.remainTime - process.executTime
+				queue[i].remainTime = process.remainTime
+				mutex.Unlock()
+				fmt.Println(process)
+				// fmt.Print("\tQ3")
+				// fmt.Println(queue3SRTF)
+			} else {
+				emptyProcessCounter++
+			}
+		}
+		if emptyProcessCounter == len(queue) {
+			break
+		}
+	}
+	waittime.Done()
+}
+
+func queueThreadSRTF(queue []process) {
+	var (
+		executionIdQ3SRTF = 0
+		minRemainQ3SRTF   = maxRemainTime
+	)
+	for i, process := range queue {
+		if process.remainTime < minRemainQ3SRTF {
+			executionIdQ3SRTF = i
+			minRemainQ3SRTF = process.remainTime
+		}
+	}
+	for queue[executionIdQ3SRTF].remainTime > 0 {
+		time.Sleep(time.Duration(queue[executionIdQ3SRTF].executTime) * time.Millisecond)
+		fmt.Print(queue[executionIdQ3SRTF].name + "\t")
+		fmt.Print(queue[executionIdQ3SRTF])
+		mutex.Lock()
+		queue[executionIdQ3SRTF].remainTime = queue[executionIdQ3SRTF].remainTime - queue[executionIdQ3SRTF].executTime
+		mutex.Unlock()
+		fmt.Print("\t->\t")
+		fmt.Println(queue[executionIdQ3SRTF])
+		// fmt.Print("\tQ1")
+		// fmt.Println(queue1RR)
+		// fmt.Print("\tQ2")
+		// fmt.Println(queue2RR)
+	}
+	waittime.Done()
+}
+
 func Lab1() {
 	fmt.Println("LAB1")
 
 	rand.Seed(time.Now().UnixNano())
-
+	fmt.Print("Q3")
+	fmt.Println(queue3SRTF)
 	for i := 0; i < numQueueProcess; i++ {
 		queue1RR = append(queue1RR,
-			processCreator(rand.Intn(maxExecutTime-minExecutTime)+minExecutTime,
-				rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ1RR+strconv.Itoa(i)))
+			processCreator(quantQueue1, rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ1RR+strconv.Itoa(i)))
 		queue2RR = append(queue2RR,
-			processCreator(rand.Intn(maxExecutTime-minExecutTime)+minExecutTime,
-				rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ2RR+strconv.Itoa(i)))
+			processCreator(quantQueue2, rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ2RR+strconv.Itoa(i)))
 		queue3SRTF = append(queue3SRTF,
-			processCreator(rand.Intn(maxExecutTime-minExecutTime)+minExecutTime,
+			processCreator(rand.Intn(maxExecutTime-quantQueue1)+quantQueue1,
 				rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ3SRTF+strconv.Itoa(i)))
 	}
+
+	printAllQueue(queue1RR, queue2RR, queue3SRTF)
+
+	waittime.Add(3)
+
+	go queueThreadRR(queue1RR)
+	go queueThreadRR(queue2RR)
+	go queueThreadSRTF(queue3SRTF)
+
+	waittime.Wait()
+
+	fmt.Println("done")
 	printAllQueue(queue1RR, queue2RR, queue3SRTF)
 }
