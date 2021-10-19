@@ -5,6 +5,7 @@ package lab1
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -30,7 +31,7 @@ var queue1RR, queue2RR, queue3SRTF []process
 
 var waittime sync.WaitGroup
 
-var mutex sync.Mutex
+// var mutex sync.Mutex
 
 const (
 	numQueueProcess = 3
@@ -90,51 +91,85 @@ func printAllQueue(queue1 []process, queue2 []process, queue3 []process) {
 // 		queue[index].remainTime-queue[index].executTime, queue[index].name)
 // }
 
-func queueThreadRR(queue []process) {
+var completeProcess []string
+
+func queueThreadRR(queue []process, trace *os.File) {
 	var emptyProcessCounter int = 0
 	for emptyProcessCounter != len(queue) {
 		emptyProcessCounter = 0
 		for i, process := range queue {
 			if process.remainTime > 0 {
-				time.Sleep(time.Duration(process.executTime) * time.Millisecond)
-				fmt.Print(process.name + "\t")
-				fmt.Print(process)
-				fmt.Print("\t->\t")
-				mutex.Lock()
-				process.remainTime = process.remainTime - process.executTime
+				if process.remainTime < process.executTime {
+					process.executTime = process.executTime -
+						(process.executTime - process.remainTime)
+					queue[i].executTime = process.executTime
+				}
 				queue[i].performed = true
+				time.Sleep(time.Duration(process.executTime) * time.Millisecond)
+				// fmt.Print(process.name + "\t")
+				// fmt.Print(process)
+				// fmt.Print("\t->\t")
+				process.remainTime = process.remainTime - process.executTime
+				trace.WriteString(process.name + "\t" + strconv.Itoa(process.executTime) +
+					"\t|\t" + strconv.Itoa(queue[i].remainTime) +
+					"\t->\t" + strconv.Itoa(process.remainTime) + "\n")
 				queue[i].remainTime = process.remainTime
 				queue[i].performed = false
-				mutex.Unlock()
-				fmt.Println(process)
-				// fmt.Print("\tQ3")
-				// fmt.Println(queue3SRTF)
+				// fmt.Println(process)
 			} else {
+				if !contain(completeProcess, process.name) {
+					completeProcess = append(completeProcess, process.name)
+					fmt.Println(process.name + "\tcomplete!")
+					trace.WriteString(process.name + "\tcomplete!\n")
+				}
 				emptyProcessCounter++
 			}
 		}
 	}
 	for i, process := range queue3SRTF {
-		if process.executTime > 0 && !process.performed {
+		if process.executTime > 0 && process.remainTime > 0 && !process.performed {
 			queue3SRTF[i] = queue[0]
+			// fmt.Println(queue3SRTF)
 			queue[0] = process
 			queue[0].executTime = queue[1].executTime
+			queue[0].performed = true
 			for queue[0].remainTime > 0 {
+				if queue[0].remainTime < queue[0].executTime {
+					queue[0].executTime = queue[0].executTime -
+						(queue[0].executTime - queue[0].remainTime)
+				}
 				time.Sleep(time.Duration(time.Duration(queue[0].executTime) * time.Millisecond))
-				fmt.Print(queue[0].name + "\t")
-				fmt.Print(queue[0])
-				mutex.Lock()
+				trace.WriteString(queue[0].name + "\t" + strconv.Itoa(queue[0].executTime) +
+					"\t|\t" + strconv.Itoa(queue[0].remainTime) +
+					"\t->\t" + strconv.Itoa(queue[0].remainTime-queue[0].executTime) + "\n")
+				// fmt.Print(queue[0].name + "\t")
+				// fmt.Print(queue[0])
 				queue[0].remainTime = queue[0].remainTime - queue[0].executTime
-				mutex.Unlock()
-				fmt.Print("\t->\t")
-				fmt.Println(queue[0])
+				// fmt.Print("\t->\t")
+				// fmt.Println(queue[0])
 			}
+			fmt.Println(queue[0].name + " complete")
+			if !contain(completeProcess, queue[0].name) {
+				completeProcess = append(completeProcess, queue[0].name)
+				fmt.Println(queue[0].name + "\tcomplete!")
+				trace.WriteString(queue[0].name + "\tcomplete!\n")
+			}
+			queue[0].performed = false
 		}
 	}
 	waittime.Done()
 }
 
-func queueThreadSRTF(queue []process) {
+func contain(list []string, value string) bool {
+	for _, item := range list {
+		if item == value {
+			return true
+		}
+	}
+	return false
+}
+
+func queueThreadSRTF(queue []process, trace *os.File) {
 	var (
 		executionIdQ3SRTF   = 0
 		minRemainQ3SRTF     = 0
@@ -150,18 +185,24 @@ func queueThreadSRTF(queue []process) {
 		}
 		queue[executionIdQ3SRTF].performed = true
 		for queue[executionIdQ3SRTF].remainTime > 0 {
+			if queue[executionIdQ3SRTF].remainTime < queue[executionIdQ3SRTF].executTime {
+				queue[executionIdQ3SRTF].executTime = queue[executionIdQ3SRTF].executTime -
+					(queue[executionIdQ3SRTF].executTime - queue[executionIdQ3SRTF].remainTime)
+			}
 			time.Sleep(time.Duration(queue[executionIdQ3SRTF].executTime) * time.Millisecond)
-			fmt.Print(queue[executionIdQ3SRTF].name + "\t")
-			fmt.Print(queue[executionIdQ3SRTF])
-			mutex.Lock()
+			trace.WriteString(queue[executionIdQ3SRTF].name + "\t" + strconv.Itoa(queue[executionIdQ3SRTF].executTime) +
+				"\t|\t" + strconv.Itoa(queue[executionIdQ3SRTF].remainTime) +
+				"\t->\t" + strconv.Itoa(queue[executionIdQ3SRTF].remainTime-queue[executionIdQ3SRTF].executTime) + "\n")
+			// fmt.Print(queue[executionIdQ3SRTF].name + "\t")
+			// fmt.Print(queue[executionIdQ3SRTF])
 			queue[executionIdQ3SRTF].remainTime = queue[executionIdQ3SRTF].remainTime - queue[executionIdQ3SRTF].executTime
-			mutex.Unlock()
-			fmt.Print("\t->\t")
-			fmt.Println(queue[executionIdQ3SRTF])
-			// fmt.Print("\tQ1")
-			// fmt.Println(queue1RR)
-			// fmt.Print("\tQ2")
-			// fmt.Println(queue2RR)
+			// fmt.Print("\t->\t")
+			// fmt.Println(queue[executionIdQ3SRTF])
+		}
+		if !contain(completeProcess, queue[executionIdQ3SRTF].name) {
+			completeProcess = append(completeProcess, queue[executionIdQ3SRTF].name)
+			fmt.Println(queue[executionIdQ3SRTF].name + "\tcomplete!")
+			trace.WriteString(queue[executionIdQ3SRTF].name + "\tcomplete!\n")
 		}
 		queue[executionIdQ3SRTF].performed = false
 		emptyProcessCounter++
@@ -173,8 +214,6 @@ func Lab1() {
 	fmt.Println("LAB1")
 
 	rand.Seed(time.Now().UnixNano())
-	fmt.Print("Q3")
-	fmt.Println(queue3SRTF)
 	for i := 0; i < numQueueProcess; i++ {
 		queue1RR = append(queue1RR,
 			processCreator(quantQueue1, rand.Intn(maxRemainTime-minRemainTime)+minRemainTime, nameQ1RR+strconv.Itoa(i)))
@@ -189,9 +228,15 @@ func Lab1() {
 
 	waittime.Add(3)
 
-	go queueThreadRR(queue1RR)
-	go queueThreadRR(queue2RR)
-	go queueThreadSRTF(queue3SRTF)
+	trace, err := os.OpenFile("lab1/trace.log", os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	go queueThreadRR(queue1RR, trace)
+	go queueThreadRR(queue2RR, trace)
+	go queueThreadSRTF(queue3SRTF, trace)
 
 	waittime.Wait()
 
