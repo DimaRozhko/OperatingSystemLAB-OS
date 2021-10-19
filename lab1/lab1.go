@@ -44,7 +44,7 @@ const (
 	nameQ2RR        = "Q2RR"
 	nameQ3SRTF      = "Q3SRTF"
 	rowNameCell     = "+-------+"
-	rowTableCell    = "+---------------------+"
+	rowTableCell    = "+----------------------+"
 )
 
 func printRowTable(queue []process, name string) {
@@ -60,8 +60,8 @@ func printRowTable(queue []process, name string) {
 		} else {
 			nameFormat = "|"
 		}
-		fmt.Print("|" + strconv.Itoa(process.executTime) + "   |" +
-			strconv.Itoa(process.remainTime) + "|" + process.name + nameFormat)
+		fmt.Print("|" + strconv.Itoa(process.executTime) + "\t|" +
+			strconv.Itoa(process.remainTime) + "\t|" + process.name + nameFormat)
 	}
 	fmt.Println()
 	fmt.Print(rowNameCell)
@@ -78,7 +78,7 @@ func printAllQueue(queue1 []process, queue2 []process, queue3 []process) {
 	}
 	fmt.Print("\n|QUEU NM|")
 	for i := 0; i < numQueueProcess; i++ {
-		fmt.Print("|EXE TM|REM TM|P NAME |")
+		fmt.Print("|EXE T\t|REM T\t|P NAME |")
 	}
 	fmt.Println()
 	printRowTable(queue1, nameQ1RR)
