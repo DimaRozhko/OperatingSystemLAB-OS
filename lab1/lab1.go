@@ -31,8 +31,6 @@ var queue1RR, queue2RR, queue3SRTF []process
 
 var waittime sync.WaitGroup
 
-// var mutex sync.Mutex
-
 const (
 	numQueueProcess = 3
 	quantQueue1     = 50
@@ -86,10 +84,26 @@ func printAllQueue(queue1 []process, queue2 []process, queue3 []process) {
 	printRowTable(queue3, nameQ3SRTF)
 }
 
-// func runProcess(queue []process, index int) {
-// 	queue[index] = processCreator(queue[index].executTime,
-// 		queue[index].remainTime-queue[index].executTime, queue[index].name)
-// }
+func activeProcessToString(queue []process, name string) string {
+	var processString = ""
+	var existProcess = false
+	for _, process := range queue {
+		if process.remainTime > 0 {
+			processString += "\t" + strconv.Itoa(process.executTime) + "\t" +
+				strconv.Itoa(process.remainTime) + "\t" + process.name + "\t|"
+			existProcess = true
+		}
+	}
+	if existProcess {
+		processString = "\t" + name + processString + "\n"
+	}
+	return processString
+}
+
+func allActiveProcessToString(queue1 []process, queue2 []process, queue3 []process) string {
+	return activeProcessToString(queue1, nameQ1RR) + activeProcessToString(queue2, nameQ2RR) +
+		activeProcessToString(queue3, nameQ3SRTF)
+}
 
 var completeProcess []string
 
@@ -106,21 +120,19 @@ func queueThreadRR(queue []process, trace *os.File) {
 				}
 				queue[i].performed = true
 				time.Sleep(time.Duration(process.executTime) * time.Millisecond)
-				// fmt.Print(process.name + "\t")
-				// fmt.Print(process)
-				// fmt.Print("\t->\t")
 				process.remainTime = process.remainTime - process.executTime
 				trace.WriteString(process.name + "\t" + strconv.Itoa(process.executTime) +
 					"\t|\t" + strconv.Itoa(queue[i].remainTime) +
 					"\t->\t" + strconv.Itoa(process.remainTime) + "\n")
 				queue[i].remainTime = process.remainTime
 				queue[i].performed = false
-				// fmt.Println(process)
 			} else {
 				if !contain(completeProcess, process.name) {
 					completeProcess = append(completeProcess, process.name)
 					fmt.Println(process.name + "\tcomplete!")
-					trace.WriteString(process.name + "\tcomplete!\n")
+					var activeProcesses = allActiveProcessToString(queue1RR, queue2RR, queue3SRTF)
+					fmt.Print(activeProcesses)
+					trace.WriteString(process.name + "\tcomplete!\n" + activeProcesses)
 				}
 				emptyProcessCounter++
 			}
@@ -129,7 +141,6 @@ func queueThreadRR(queue []process, trace *os.File) {
 	for i, process := range queue3SRTF {
 		if process.executTime > 0 && process.remainTime > 0 && !process.performed {
 			queue3SRTF[i] = queue[0]
-			// fmt.Println(queue3SRTF)
 			queue[0] = process
 			queue[0].executTime = queue[1].executTime
 			queue[0].performed = true
@@ -142,17 +153,15 @@ func queueThreadRR(queue []process, trace *os.File) {
 				trace.WriteString(queue[0].name + "\t" + strconv.Itoa(queue[0].executTime) +
 					"\t|\t" + strconv.Itoa(queue[0].remainTime) +
 					"\t->\t" + strconv.Itoa(queue[0].remainTime-queue[0].executTime) + "\n")
-				// fmt.Print(queue[0].name + "\t")
-				// fmt.Print(queue[0])
 				queue[0].remainTime = queue[0].remainTime - queue[0].executTime
-				// fmt.Print("\t->\t")
-				// fmt.Println(queue[0])
 			}
 			fmt.Println(queue[0].name + " complete")
 			if !contain(completeProcess, queue[0].name) {
 				completeProcess = append(completeProcess, queue[0].name)
 				fmt.Println(queue[0].name + "\tcomplete!")
-				trace.WriteString(queue[0].name + "\tcomplete!\n")
+				var activeProcesses = allActiveProcessToString(queue1RR, queue2RR, queue3SRTF)
+				fmt.Print(activeProcesses)
+				trace.WriteString(process.name + "\tcomplete!\n" + activeProcesses)
 			}
 			queue[0].performed = false
 		}
@@ -193,16 +202,15 @@ func queueThreadSRTF(queue []process, trace *os.File) {
 			trace.WriteString(queue[executionIdQ3SRTF].name + "\t" + strconv.Itoa(queue[executionIdQ3SRTF].executTime) +
 				"\t|\t" + strconv.Itoa(queue[executionIdQ3SRTF].remainTime) +
 				"\t->\t" + strconv.Itoa(queue[executionIdQ3SRTF].remainTime-queue[executionIdQ3SRTF].executTime) + "\n")
-			// fmt.Print(queue[executionIdQ3SRTF].name + "\t")
-			// fmt.Print(queue[executionIdQ3SRTF])
 			queue[executionIdQ3SRTF].remainTime = queue[executionIdQ3SRTF].remainTime - queue[executionIdQ3SRTF].executTime
-			// fmt.Print("\t->\t")
-			// fmt.Println(queue[executionIdQ3SRTF])
 		}
 		if !contain(completeProcess, queue[executionIdQ3SRTF].name) {
 			completeProcess = append(completeProcess, queue[executionIdQ3SRTF].name)
 			fmt.Println(queue[executionIdQ3SRTF].name + "\tcomplete!")
 			trace.WriteString(queue[executionIdQ3SRTF].name + "\tcomplete!\n")
+			var activeProcesses = allActiveProcessToString(queue1RR, queue2RR, queue3SRTF)
+			fmt.Print(activeProcesses)
+			trace.WriteString(queue[executionIdQ3SRTF].name + "\tcomplete!\n" + activeProcesses)
 		}
 		queue[executionIdQ3SRTF].performed = false
 		emptyProcessCounter++
@@ -240,6 +248,6 @@ func Lab1() {
 
 	waittime.Wait()
 
-	fmt.Println("done")
+	fmt.Println("ALL PROCESS COMPLETE")
 	printAllQueue(queue1RR, queue2RR, queue3SRTF)
 }
