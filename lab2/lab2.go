@@ -59,7 +59,8 @@ func userThreadA(moneyInAccount int) {
 		mailbox.transferMoney = getMoneyVal
 		mailbox.moneyInAccount = moneyInAccount
 		mailbox.requestId = get
-		fmt.Println(mailbox)
+		time.Sleep(1 * time.Microsecond)
+		// fmt.Println(mailbox)
 		for mailbox.requestId != post {
 		}
 		fmt.Println(mailbox)
@@ -83,8 +84,14 @@ func atmThreadB(stock stockMoney) {
 	fmt.Println("THREAD B")
 	for isATMwork {
 		if mailbox.requestId == get {
+			fmt.Println(mailbox)
 			mailbox.requestId = wait
 
+			if mailbox.moneyInAccount >= mailbox.transferMoney {
+				mailbox.moneyInAccount -= mailbox.transferMoney
+			} else {
+				mailbox.transferMoney = 0
+			}
 			mailbox.requestId = post
 		}
 	}
