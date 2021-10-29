@@ -63,12 +63,14 @@ func userThreadA(moneyInAccount int) {
 		// fmt.Println(mailbox)
 		for mailbox.requestId != post {
 		}
+		fmt.Printf("Mailbox after ATM transfer:\t")
 		fmt.Println(mailbox)
 		moneyInAccount = mailbox.moneyInAccount
 		mailbox.moneyInAccount = 0
 		mailbox.transferMoney = 0
 		mailbox.stock = stockMoney{}
 		mailbox.requestId = empty
+		fmt.Printf("Set default mailbox:\t\t")
 		fmt.Println(mailbox)
 		fmt.Print("If you want to continue Yes/No [y/n]:")
 		fmt.Scan(&getMoney)
@@ -80,14 +82,40 @@ func userThreadA(moneyInAccount int) {
 	waittime.Done()
 }
 
+func exchangeMoney(stock int, mailboxStock int, transferMoney int, bankNoteValue int) (int, int, int) {
+	for transferMoney >= bankNoteValue && stock > 0 {
+		transferMoney -= bankNoteValue
+		stock--
+		mailboxStock++
+	}
+	return stock, mailboxStock, transferMoney
+}
+
 func atmThreadB(stock stockMoney) {
 	fmt.Println("THREAD B")
 	for isATMwork {
 		if mailbox.requestId == get {
-			fmt.Println(mailbox)
 			mailbox.requestId = wait
-
 			if mailbox.moneyInAccount >= mailbox.transferMoney {
+				fmt.Printf("ATM before preparation:\t\t")
+				fmt.Println(stock)
+				var transferMoneyBuffer = mailbox.transferMoney
+				stock.oneHundred, mailbox.stock.oneHundred, transferMoneyBuffer =
+					exchangeMoney(stock.oneHundred, mailbox.stock.oneHundred, transferMoneyBuffer, 100)
+				stock.fifty, mailbox.stock.fifty, transferMoneyBuffer =
+					exchangeMoney(stock.fifty, mailbox.stock.fifty, transferMoneyBuffer, 50)
+				stock.twenty, mailbox.stock.twenty, transferMoneyBuffer =
+					exchangeMoney(stock.twenty, mailbox.stock.twenty, transferMoneyBuffer, 20)
+				stock.ten, mailbox.stock.ten, transferMoneyBuffer =
+					exchangeMoney(stock.ten, mailbox.stock.ten, transferMoneyBuffer, 10)
+				stock.five, mailbox.stock.five, transferMoneyBuffer =
+					exchangeMoney(stock.five, mailbox.stock.five, transferMoneyBuffer, 5)
+				stock.two, mailbox.stock.two, transferMoneyBuffer =
+					exchangeMoney(stock.two, mailbox.stock.two, transferMoneyBuffer, 2)
+				stock.one, mailbox.stock.one, transferMoneyBuffer =
+					exchangeMoney(stock.one, mailbox.stock.one, transferMoneyBuffer, 1)
+				fmt.Printf("ATM after preparation:\t\t")
+				fmt.Println(stock)
 				mailbox.moneyInAccount -= mailbox.transferMoney
 			} else {
 				mailbox.transferMoney = 0
