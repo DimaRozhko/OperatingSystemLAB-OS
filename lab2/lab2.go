@@ -3,6 +3,7 @@ package lab2
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,44 +35,42 @@ type mailDTO struct {
 
 var sessionCounter = 0
 var isATMwork = false
-
 var waittime sync.WaitGroup
-
-var mailbox mailDTO = mailDTO{
-	requestId: empty,
-}
+var mailbox mailDTO = mailDTO{requestId: empty}
 
 func userThreadA(moneyInAccount int) {
 	sessionCounter++
-	fmt.Println("THREAD A")
+	fmt.Println("THREAD A (start)")
+	fmt.Printf("You balance in account:\t%d\n", moneyInAccount)
 	fmt.Print("If you want to continue Yes/No [y/n]:")
 	var getMoney string
 	fmt.Scan(&getMoney)
 	getMoney = strings.ToLower(getMoney)
 	for getMoney == "y" || getMoney == "yes" {
-		fmt.Printf("You balance in account:\t%d\nHow much money you want to get from ATM?\nInput:\t", moneyInAccount)
 		var getMoneyVal int
+		fmt.Printf("How much money you want to get from ATM?\nInput:\t")
 		fmt.Scan(&getMoneyVal)
-		fmt.Println(getMoneyVal)
 		for mailbox.requestId != empty {
 		}
-		// if mailbox.requestId == empty {
 		mailbox.transferMoney = getMoneyVal
 		mailbox.moneyInAccount = moneyInAccount
 		mailbox.requestId = get
 		time.Sleep(1 * time.Microsecond)
-		// fmt.Println(mailbox)
 		for mailbox.requestId != post {
 		}
-		fmt.Printf("Mailbox after ATM transfer:\t")
-		fmt.Println(mailbox)
+		fmt.Println("+-------------------------------------------------------------------------------+")
+		fmt.Printf("|Mailbox after ATM transfer:\t\t\t\t\t\t\t|\n|->\t")
+		fmt.Println(bankNoteInStock(mailbox.stock, "user") + "\t|")
+		fmt.Printf("|->\tUSER GOT =========>%d$\t\t\t\t\t\t\t|\n", mailbox.transferMoney)
+		fmt.Println("+-------------------------------------------------------------------------------+")
 		moneyInAccount = mailbox.moneyInAccount
 		mailbox.moneyInAccount = 0
 		mailbox.transferMoney = 0
 		mailbox.stock = stockMoney{}
 		mailbox.requestId = empty
-		fmt.Printf("Set default mailbox:\t\t")
-		fmt.Println(mailbox)
+		// fmt.Printf("Set default mailbox:\n->\t")
+		// bankNoteInStock(mailbox.stock, "mailbox")
+		fmt.Printf("You balance in account:\t%d\n", moneyInAccount)
 		fmt.Print("If you want to continue Yes/No [y/n]:")
 		fmt.Scan(&getMoney)
 	}
@@ -80,6 +79,7 @@ func userThreadA(moneyInAccount int) {
 		isATMwork = false
 	}
 	waittime.Done()
+	fmt.Println("THREAD A (finish)")
 }
 
 func exchangeMoney(stock int, mailboxStock int, transferMoney int, bankNoteValue int) (int, int, int) {
@@ -92,13 +92,14 @@ func exchangeMoney(stock int, mailboxStock int, transferMoney int, bankNoteValue
 }
 
 func atmThreadB(stock stockMoney) {
-	fmt.Println("THREAD B")
+	fmt.Println("THREAD B (start)")
 	for isATMwork {
 		if mailbox.requestId == get {
 			mailbox.requestId = wait
 			if mailbox.moneyInAccount >= mailbox.transferMoney {
-				fmt.Printf("ATM before preparation:\t\t")
-				fmt.Println(stock)
+				fmt.Printf("ATM before preparation:\n->\t")
+				fmt.Println(bankNoteInStock(stock, "ATM"))
+				var stockSave = stock
 				var transferMoneyBuffer = mailbox.transferMoney
 				stock.oneHundred, mailbox.stock.oneHundred, transferMoneyBuffer =
 					exchangeMoney(stock.oneHundred, mailbox.stock.oneHundred, transferMoneyBuffer, 100)
@@ -114,18 +115,32 @@ func atmThreadB(stock stockMoney) {
 					exchangeMoney(stock.two, mailbox.stock.two, transferMoneyBuffer, 2)
 				stock.one, mailbox.stock.one, transferMoneyBuffer =
 					exchangeMoney(stock.one, mailbox.stock.one, transferMoneyBuffer, 1)
-				fmt.Printf("ATM after preparation:\t\t")
-				fmt.Println(stock)
-				mailbox.moneyInAccount -= mailbox.transferMoney
+				if transferMoneyBuffer != 0 {
+					stock = stockSave
+					mailbox.stock = stockMoney{one: 0, two: 0, five: 0, ten: 0, twenty: 0, fifty: 0, oneHundred: 0}
+					mailbox.transferMoney = 0
+					fmt.Println("Not enough money in the ATM:\t" + strconv.Itoa(transferMoneyBuffer))
+				} else {
+					mailbox.moneyInAccount -= mailbox.transferMoney
+				}
+				fmt.Printf("ATM after preparation:\n->\t")
+				fmt.Println(bankNoteInStock(stock, "ATM"))
 			} else {
+				fmt.Printf("YOU CAN'T GET %d$:\n->\t", mailbox.transferMoney)
+				fmt.Printf("In your account is only %d$\n", mailbox.moneyInAccount)
 				mailbox.transferMoney = 0
 			}
 			mailbox.requestId = post
 		}
 	}
 	waittime.Done()
+	fmt.Println("THREAD B (finish)")
 }
 
+func bankNoteInStock(ATM stockMoney, stockName string) string {
+	return fmt.Sprintf("Bank note in %s: 1$=%d, 2$=%d, 5$=%d, 10$=%d, 20$=%d, 50$=%d, 100$=%d",
+		stockName, ATM.one, ATM.two, ATM.five, ATM.ten, ATM.twenty, ATM.fifty, ATM.oneHundred)
+}
 func Lab2() {
 	rand.Seed(time.Now().UnixNano())
 	var capacityATM = 1000
@@ -139,7 +154,7 @@ func Lab2() {
 		oneHundred: rand.Intn(capacityATM),
 	}
 
-	fmt.Println(ATM)
+	fmt.Println(bankNoteInStock(ATM, "ATM"))
 
 	isATMwork = true
 	waittime.Add(2)
