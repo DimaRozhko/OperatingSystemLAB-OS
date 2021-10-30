@@ -142,6 +142,7 @@ func bankNoteInStock(ATM stockMoney, stockName string) string {
 		stockName, ATM.one, ATM.two, ATM.five, ATM.ten, ATM.twenty, ATM.fifty, ATM.oneHundred)
 }
 func Lab2() {
+	fmt.Println("LAB2")
 	rand.Seed(time.Now().UnixNano())
 	var capacityATM = 1000
 	var ATM stockMoney = stockMoney{
