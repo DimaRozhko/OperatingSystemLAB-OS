@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 )
 
 func openFileWithCheck(name string, flag int) *os.File {
@@ -27,25 +25,10 @@ func Lab3() {
 	cacheDatFile := openFileWithCheck("lab3/data/cache.dat", os.O_RDONLY)
 
 	buff, _ := ioutil.ReadAll(originDatFile)
-	originData := strings.Fields(string(buff))
-	fmt.Println(originData)
+	fmt.Println(buff)
 	buff, _ = ioutil.ReadAll(mainmemDatFile)
-	mainmemDat := strings.Fields(string(buff))
-	fmt.Println(mainmemDat)
-	var kayToMainMemMap []int
-	mainMemMap := make(map[int]string)
-	for i, tok := range mainmemDat {
-		if i%2 == 0 {
-			num, _ := strconv.ParseInt(tok, 2, 64)
-			kayToMainMemMap = append(kayToMainMemMap, int(num))
-		} else {
-			mainMemMap[kayToMainMemMap[len(kayToMainMemMap)-1]] = tok
-		}
-	}
-	fmt.Println(kayToMainMemMap)
-	fmt.Println(mainMemMap)
+	fmt.Println(buff)
 	buff, _ = ioutil.ReadAll(cacheDatFile)
-	cacheDat := strings.Fields(string(buff))
-	fmt.Println(cacheDat)
+	fmt.Println(buff)
 
 }
