@@ -37,6 +37,8 @@ func queryRunner(originData []string) {
 				// fmt.Println(cache.GetPreviousQueryId())
 			} else {
 				fmt.Println("NOT CACHE " + tok)
+				mainmem.AddRandomToMainMem(tok[1:])
+				cache.AddKeyToCacheMap(tok[1:])
 			}
 		}
 	}
@@ -61,18 +63,6 @@ func Lab3() {
 	// fmt.Println(mainmemDat)
 	mainmem.MainMemDatMapCreator(mainmemDat)
 	fmt.Println(mainmem.GetMainDatMap())
-	// var kayToMainMemMap []int
-	// mainMemMap := make(map[int]string)
-	// for i, tok := range mainmemDat {
-	// 	if i%2 == 0 {
-	// 		num, _ := strconv.ParseInt(tok, 2, 64)
-	// 		kayToMainMemMap = append(kayToMainMemMap, int(num))
-	// 	} else {
-	// 		mainMemMap[kayToMainMemMap[len(kayToMainMemMap)-1]] = tok
-	// 	}
-	// }
-	// fmt.Println(kayToMainMemMap)
-	// fmt.Println(mainMemMap)
 	buff, _ = ioutil.ReadAll(cacheDatFile)
 	// fmt.Println(buff)
 	// fmt.Println(cacheDat)
@@ -82,5 +72,7 @@ func Lab3() {
 	fmt.Println(cache.GetKayTocacheDatMap())
 
 	queryRunner(originData)
+
+	fmt.Println(mainmem.GetMainDatMap())
 
 }

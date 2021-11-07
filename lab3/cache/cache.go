@@ -21,6 +21,11 @@ func GetPreviousQueryId() int {
 	return previousQueryId
 }
 
+func AddKeyToCacheMap(keyNum string) {
+	convNum, _ := strconv.ParseInt(keyNum, 10, 64)
+	kayToCacheDatMap = append(kayToCacheDatMap, int(convNum))
+}
+
 func AddRandomDataCacheDatMapByKey(key int) {
 	rand.Seed(time.Now().UnixNano())
 	cacheDatMap[key] = append(cacheDatMap[key], strconv.FormatInt(rand.Int63(), 2)[:24])
