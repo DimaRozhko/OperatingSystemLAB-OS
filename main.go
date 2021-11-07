@@ -21,6 +21,8 @@ func main() {
 			lab2.Lab2()
 		case "lab3":
 			lab3.Lab3()
+		case "lab4":
+			lab3.Lab3()
 		}
 	}
 }
