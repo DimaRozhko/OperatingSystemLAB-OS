@@ -20,13 +20,24 @@ func openFileWithCheck(name string, flag int) *os.File {
 	return file
 }
 
+func moveDataFromCacheToMainMemory() {
+	mainmem.AddDataFromCache(cache.GetCacheDatMap(), cache.GetKayTocacheDatMap())
+	cache.ClearСache()
+}
+
 func queryRunner(originData []string) {
 	for _, tok := range originData {
+		if cache.IsCacheFull() {
+			moveDataFromCacheToMainMemory()
+		}
 		if govalidator.IsInt(tok) {
-			// fmt.Println(tok)
 			for i, _ := strconv.ParseInt(tok, 10, 64); i > 0; i-- {
-				// fmt.Println(cache.GetPreviousQuery())
-				// cache.CheckIsCache(cache.GetPreviousQuery())
+				if cache.IsCacheFull() {
+					moveDataFromCacheToMainMemory()
+				}
+				cache.AddRandomDataCacheDatMapByKey(cache.GetPreviousQueryId())
+				fmt.Println("CACHE " + cache.GetPreviousQuery())
+				fmt.Println(cache.GetCacheDatMap())
 
 			}
 		} else {
@@ -34,7 +45,6 @@ func queryRunner(originData []string) {
 				fmt.Println("CACHE " + cache.GetPreviousQuery())
 				cache.AddRandomDataCacheDatMapByKey(cache.GetPreviousQueryId())
 				fmt.Println(cache.GetCacheDatMap())
-				// fmt.Println(cache.GetPreviousQueryId())
 			} else {
 				fmt.Println("NOT CACHE " + tok)
 				mainmem.AddRandomToMainMem(tok[1:])
@@ -42,6 +52,7 @@ func queryRunner(originData []string) {
 			}
 		}
 	}
+	moveDataFromCacheToMainMemory()
 }
 
 func Lab3() {
@@ -54,22 +65,17 @@ func Lab3() {
 	cacheDatFile := openFileWithCheck("lab3/data/cache.dat", os.O_RDONLY)
 
 	buff, _ := ioutil.ReadAll(originDatFile)
-	// fmt.Println(buff)
 	originData := strings.Fields(string(buff))
-	// fmt.Println(originData)
 	buff, _ = ioutil.ReadAll(mainmemDatFile)
-	// fmt.Println(buff)
 	mainmemDat := strings.Fields(string(buff))
-	// fmt.Println(mainmemDat)
 	mainmem.MainMemDatMapCreator(mainmemDat)
+	fmt.Println("INPUT MEMORY CONDIRION")
 	fmt.Println(mainmem.GetMainDatMap())
 	buff, _ = ioutil.ReadAll(cacheDatFile)
-	// fmt.Println(buff)
-	// fmt.Println(cacheDat)
 
 	cache.CacheDatMapCreator(strings.Fields(string(buff)))
+	fmt.Println("INPUT CACHE CONDIRION")
 	fmt.Println(cache.GetCacheDatMap())
-	fmt.Println(cache.GetKayTocacheDatMap())
 
 	queryRunner(originData)
 
