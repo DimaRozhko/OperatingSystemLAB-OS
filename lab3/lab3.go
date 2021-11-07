@@ -19,6 +19,26 @@ func openFileWithCheck(name string, flag int) *os.File {
 	return file
 }
 
+func queryRunner(originData []string) {
+	for _, tok := range originData {
+		if govalidator.IsInt(tok) {
+			// fmt.Println(tok)
+			for i, _ := strconv.ParseInt(tok, 10, 64); i > 0; i-- {
+				// fmt.Println(cache.GetPreviousQuery())
+				// cache.CheckIsCache(cache.GetPreviousQuery())
+
+			}
+		} else {
+			if cache.CheckIsCache(tok) {
+				fmt.Println("CACHE " + cache.GetPreviousQuery())
+				// fmt.Println(cache.GetPreviousQueryId())
+			} else {
+				fmt.Println("NOT CACHE " + tok)
+			}
+		}
+	}
+}
+
 func Lab3() {
 	fmt.Println("LAB3")
 	os.MkdirAll("lab3/log", os.ModePerm)
@@ -50,23 +70,12 @@ func Lab3() {
 	// fmt.Println(mainMemMap)
 	buff, _ = ioutil.ReadAll(cacheDatFile)
 	// fmt.Println(buff)
-	cacheDat := strings.Fields(string(buff))
 	// fmt.Println(cacheDat)
 
-	cache.CacheDatMapCreator(cacheDat)
+	cache.CacheDatMapCreator(strings.Fields(string(buff)))
 	fmt.Println(cache.GetCacheDatMap())
 	fmt.Println(cache.GetKayTocacheDatMap())
 
-	for _, tok := range originData {
-		if govalidator.IsInt(tok) {
-			// fmt.Println(tok)
-			for i, _ := strconv.ParseInt(tok, 10, 64); i > 0; i-- {
-				// fmt.Println(cache.GetPreviousQuery())
-				// cache.CheckIsCache(cache.GetPreviousQuery())
+	queryRunner(originData)
 
-			}
-		} else {
-			cache.CheckIsCache(tok)
-		}
-	}
 }

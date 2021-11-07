@@ -7,6 +7,7 @@ import (
 )
 
 var previousQuery string = ""
+var previousQueryId int = 0
 var kayTocacheDatMap []int
 var cacheDatMap map[int][]string
 
@@ -14,16 +15,32 @@ func GetPreviousQuery() string {
 	return previousQuery
 }
 
+func GetPreviousQueryId() int {
+	return previousQueryId
+}
+
 func CheckIsCache(query string) bool {
 	// fmt.Println(query)
+	isCach := true
 	if len(query) > 0 && strings.Compare(previousQuery, query) == 0 {
-		return true
+		return isCach
 	}
 	numQuery, _ := strconv.Atoi(query[1:])
+	for _, num := range kayTocacheDatMap {
+		if num == numQuery {
+			isCach = false
+			break
+		}
+	}
+	if isCach {
+		return !isCach
+	}
+	isCach = true
 	binNumQuery := strconv.FormatInt(int64(numQuery), 2)
-	fmt.Println(strings.Repeat("0", 24-len(binNumQuery)) + binNumQuery)
+	fmt.Println(strings.Repeat("0", 4-len(binNumQuery)) + binNumQuery)
 	previousQuery = query
-	return false
+	previousQueryId = numQuery
+	return isCach
 }
 
 func GetKayTocacheDatMap() []int {
