@@ -2,13 +2,15 @@ package cache
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var previousQuery string = ""
 var previousQueryId int = 0
-var kayTocacheDatMap []int
+var kayToCacheDatMap []int
 var cacheDatMap map[int][]string
 
 func GetPreviousQuery() string {
@@ -19,6 +21,11 @@ func GetPreviousQueryId() int {
 	return previousQueryId
 }
 
+func AddRandomDataCacheDatMapByKey(key int) {
+	rand.Seed(time.Now().UnixNano())
+	cacheDatMap[key] = append(cacheDatMap[key], strconv.FormatInt(rand.Int63(), 2)[:24])
+}
+
 func CheckIsCache(query string) bool {
 	// fmt.Println(query)
 	isCach := true
@@ -26,7 +33,7 @@ func CheckIsCache(query string) bool {
 		return isCach
 	}
 	numQuery, _ := strconv.Atoi(query[1:])
-	for _, num := range kayTocacheDatMap {
+	for _, num := range kayToCacheDatMap {
 		if num == numQuery {
 			isCach = false
 			break
@@ -44,7 +51,7 @@ func CheckIsCache(query string) bool {
 }
 
 func GetKayTocacheDatMap() []int {
-	return kayTocacheDatMap
+	return kayToCacheDatMap
 }
 
 func GetCacheDatMap() map[int][]string {
@@ -56,10 +63,10 @@ func CacheDatMapCreator(cacheDat []string) {
 	for _, tok := range cacheDat {
 		if len(tok) < 5 {
 			num, _ := strconv.ParseInt(tok, 2, 64)
-			kayTocacheDatMap = append(kayTocacheDatMap, int(num))
+			kayToCacheDatMap = append(kayToCacheDatMap, int(num))
 		} else {
-			cacheDatMap[kayTocacheDatMap[len(kayTocacheDatMap)-1]] =
-				append(cacheDatMap[kayTocacheDatMap[len(kayTocacheDatMap)-1]], tok)
+			cacheDatMap[kayToCacheDatMap[len(kayToCacheDatMap)-1]] =
+				append(cacheDatMap[kayToCacheDatMap[len(kayToCacheDatMap)-1]], tok)
 		}
 	}
 }

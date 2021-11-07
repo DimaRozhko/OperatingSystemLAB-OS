@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"main/lab3/cache"
+	"main/lab3/mainmem"
 	"os"
 	"strconv"
 	"strings"
@@ -31,6 +32,8 @@ func queryRunner(originData []string) {
 		} else {
 			if cache.CheckIsCache(tok) {
 				fmt.Println("CACHE " + cache.GetPreviousQuery())
+				cache.AddRandomDataCacheDatMapByKey(cache.GetPreviousQueryId())
+				fmt.Println(cache.GetCacheDatMap())
 				// fmt.Println(cache.GetPreviousQueryId())
 			} else {
 				fmt.Println("NOT CACHE " + tok)
@@ -55,7 +58,9 @@ func Lab3() {
 	buff, _ = ioutil.ReadAll(mainmemDatFile)
 	// fmt.Println(buff)
 	mainmemDat := strings.Fields(string(buff))
-	fmt.Println(mainmemDat)
+	// fmt.Println(mainmemDat)
+	mainmem.MainMemDatMapCreator(mainmemDat)
+	fmt.Println(mainmem.GetMainDatMap())
 	// var kayToMainMemMap []int
 	// mainMemMap := make(map[int]string)
 	// for i, tok := range mainmemDat {
