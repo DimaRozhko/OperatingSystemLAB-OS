@@ -12,21 +12,34 @@ type clusterCode struct {
 	word [2]byte
 }
 
+type clusterStorage struct {
+	id       int
+	fileNeme string
+}
+
 const (
 	clusterLength          = 0xFF + 1
 	usedClusterLength      = 0x0F
 	firstUsedCluster       = 0x06 // only for first row in the table
 	defectClusterCode      = 0xF7
-	percentOfDefectCluster = 60
+	percentOfDefectCluster = 0
 	sizeCluster            = 2 // 2Kb
 
 )
 
 var (
+	fileIds                 []int
+	curentFileName          string
+	fileId                  int
+	clustereMap             map[clusterCode]clusterStorage
 	fat16Table              [clusterLength][clusterLength]clusterCode
 	currentRowFAT16Table    byte = 0x00
 	currentColumnFAT16Table byte = 0x00
 )
+
+func GetAllFileId() []int {
+	return fileIds
+}
 
 // var fat16ReserveTable [clusterLength][clusterLength]clusterCode
 
@@ -79,24 +92,54 @@ func TableCreator() {
 	fmt.Println(fat16Table[currentRowFAT16Table][:usedClusterLength])
 	setDefectCluster()
 	printCluster()
+	clustereMap = make(map[clusterCode]clusterStorage)
 }
 
 func setCluster() {
-	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table, currentColumnFAT16Table + 1}
+	var (
+		rowToUseNextCluster    byte = currentRowFAT16Table
+		columnToUseNextCluster byte = currentColumnFAT16Table + 1
+		facedDefect            bool = false
+	)
+	for fat16Table[rowToUseNextCluster][columnToUseNextCluster].word[0] == 0xFF &&
+		fat16Table[rowToUseNextCluster][columnToUseNextCluster].word[1] == defectClusterCode &&
+		columnToUseNextCluster < usedClusterLength && rowToUseNextCluster < usedClusterLength {
+		fmt.Println(fat16Table[rowToUseNextCluster][columnToUseNextCluster])
+
+		if columnToUseNextCluster == usedClusterLength-1 {
+			rowToUseNextCluster++
+			columnToUseNextCluster = 0
+		} else {
+			columnToUseNextCluster++
+		}
+		facedDefect = true
+	}
+	if facedDefect {
+		if columnToUseNextCluster == usedClusterLength-1 {
+			rowToUseNextCluster++
+			columnToUseNextCluster = 0
+		} else {
+			// columnToUseNextCluster++
+		}
+	}
+	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{rowToUseNextCluster, columnToUseNextCluster}
+	clustereMap[clusterCode{word: [2]byte{rowToUseNextCluster, columnToUseNextCluster}}] = clusterStorage{id: fileId, fileNeme: curentFileName}
+	// currentRowFAT16Table = rowToUseNextCluster
+	// currentColumnFAT16Table = columnToUseNextCluster
 }
 
 func moveFileToFAT16Table(fileSizeDec int) {
 
 	currentColumnFAT16Table++
-	if currentColumnFAT16Table == usedClusterLength-1 {
-		fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
-		currentColumnFAT16Table = 0
-		currentRowFAT16Table++
-	}
-	for currentRowFAT16Table < usedClusterLength {
+	// if currentColumnFAT16Table == usedClusterLength-1 {
+	// 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
+	// 	currentColumnFAT16Table = 0
+	// 	currentRowFAT16Table++
+	// }
+	for ; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
 		for ; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
 			if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0xFF &&
-				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == defectClusterCode {
+				(fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == defectClusterCode) {
 
 				if currentColumnFAT16Table == usedClusterLength-1 {
 					currentRowFAT16Table++
@@ -105,6 +148,7 @@ func moveFileToFAT16Table(fileSizeDec int) {
 			}
 			if currentColumnFAT16Table == usedClusterLength-1 {
 				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
+				clustereMap[clusterCode{word: [2]byte{currentRowFAT16Table + 1, 0}}] = clusterStorage{id: fileId, fileNeme: curentFileName}
 				currentColumnFAT16Table = 0
 				currentRowFAT16Table++
 			}
@@ -114,8 +158,9 @@ func moveFileToFAT16Table(fileSizeDec int) {
 			} else {
 				if fileSizeDec > 0 {
 					setCluster()
+				} else {
+					return
 				}
-				return
 			}
 			fileSizeDec -= sizeCluster
 		}
@@ -123,7 +168,9 @@ func moveFileToFAT16Table(fileSizeDec int) {
 	}
 }
 
-func AddFileToFAT16Table(fileName string, attribute string, creationTime string, creationDate string, fileSizeHex string) {
+func CreateFileInFAT16Table(fileName string, attribute string, creationTime string, creationDate string, fileSizeHex string) {
+	fileId = len(fileIds)
+	curentFileName = fileName
 	fmt.Println("Fileneme: " + fileName)
 	fmt.Println("\tAttribute: " + attribute)
 	fmt.Println("\tCreation date: " + creationDate)
@@ -134,4 +181,30 @@ func AddFileToFAT16Table(fileName string, attribute string, creationTime string,
 	moveFileToFAT16Table(int(fileSizeDec))
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
 	printCluster()
+	fileIds = append(fileIds, fileId)
+}
+
+func FindFileById(id int) {
+	fmt.Println(id)
+	var codeHex string
+	for i := 0; i < usedClusterLength; i++ {
+		for j := 0; j < usedClusterLength; j++ {
+			if value, ok := clustereMap[fat16Table[i][j]]; ok {
+				if value.id == id {
+					fmt.Print("Cluster: ")
+					codeHex = strconv.FormatInt(int64(fat16Table[i][j].word[0]), 16)
+					if len(codeHex) == 1 {
+						fmt.Print("0")
+					}
+					fmt.Print(strings.ToUpper(codeHex))
+					codeHex = strconv.FormatInt(int64(fat16Table[i][j].word[1]), 16)
+					if len(codeHex) == 1 {
+						fmt.Print("0")
+					}
+					fmt.Print(strings.ToUpper(codeHex))
+					fmt.Println("\t->\tFilaname: ", value.fileNeme)
+				}
+			}
+		}
+	}
 }

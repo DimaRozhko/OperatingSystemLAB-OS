@@ -22,7 +22,9 @@ func Lab4() {
 			break
 		}
 		fileInfo := strings.Split(row, "$")
-		fat16.AddFileToFAT16Table(fileInfo[0], fileInfo[1], fileInfo[2], fileInfo[3], fileInfo[4])
+		fat16.CreateFileInFAT16Table(fileInfo[0], fileInfo[1], fileInfo[2], fileInfo[3], fileInfo[4])
 	}
 	file.Close()
+	fmt.Println(fat16.GetAllFileId())
+	fat16.FindFileById(0)
 }
