@@ -18,7 +18,7 @@ func Lab4() {
 	fat16.TableCreator()
 	splitRow := strings.Split(string(buff), "\n")
 	for i, row := range splitRow {
-		if i > 0 {
+		if i > 100 {
 			break
 		}
 		fileInfo := strings.Split(row, "$")

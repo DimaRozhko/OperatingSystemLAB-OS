@@ -17,15 +17,15 @@ const (
 	usedClusterLength      = 0x0F
 	firstUsedCluster       = 0x06 // only for first row in the table
 	defectClusterCode      = 0xF7
-	percentOfDefectCluster = 0
+	percentOfDefectCluster = 60
 	sizeCluster            = 2 // 2Kb
 
 )
 
 var (
 	fat16Table              [clusterLength][clusterLength]clusterCode
-	currentRowFAT16Table    = 0x00
-	currentColumnFAT16Table = 0x00
+	currentRowFAT16Table    byte = 0x00
+	currentColumnFAT16Table byte = 0x00
 )
 
 // var fat16ReserveTable [clusterLength][clusterLength]clusterCode
@@ -74,7 +74,6 @@ func TableCreator() {
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0x00, 0x05}}
 	currentColumnFAT16Table++
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
-	currentColumnFAT16Table++
 	fmt.Println("INIT FAT16 TABLE -> Set necessary file to run OS:")
 	fmt.Print("First line in \"used\" cluster:\t")
 	fmt.Println(fat16Table[currentRowFAT16Table][:usedClusterLength])
@@ -83,31 +82,45 @@ func TableCreator() {
 }
 
 func setCluster() {
-
+	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table, currentColumnFAT16Table + 1}
 }
 
 func moveFileToFAT16Table(fileSizeDec int) {
-	for i := currentRowFAT16Table; i < usedClusterLength; i++ {
-		for j := currentColumnFAT16Table; j < usedClusterLength; j++ {
+
+	currentColumnFAT16Table++
+	if currentColumnFAT16Table == usedClusterLength-1 {
+		fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
+		currentColumnFAT16Table = 0
+		currentRowFAT16Table++
+	}
+	for currentRowFAT16Table < usedClusterLength {
+		for ; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
+			if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0xFF &&
+				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == defectClusterCode {
+
+				if currentColumnFAT16Table == usedClusterLength-1 {
+					currentRowFAT16Table++
+				}
+				continue
+			}
+			if currentColumnFAT16Table == usedClusterLength-1 {
+				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
+				currentColumnFAT16Table = 0
+				currentRowFAT16Table++
+			}
 			if fileSizeDec >= sizeCluster {
 				setCluster()
+
 			} else {
 				if fileSizeDec > 0 {
 					setCluster()
-				}
-				if j == usedClusterLength-1 {
-					currentRowFAT16Table = i + 1
-					currentColumnFAT16Table = 0
-				} else {
-					currentRowFAT16Table = i
-					currentColumnFAT16Table = j
 				}
 				return
 			}
 			fileSizeDec -= sizeCluster
 		}
-	}
 
+	}
 }
 
 func AddFileToFAT16Table(fileName string, attribute string, creationTime string, creationDate string, fileSizeHex string) {
@@ -119,5 +132,6 @@ func AddFileToFAT16Table(fileName string, attribute string, creationTime string,
 	fmt.Println("\tFile size: " + fileSizeHex)
 	fileSizeDec, _ := strconv.ParseInt(fileSizeHex, 16, 64)
 	moveFileToFAT16Table(int(fileSizeDec))
-
+	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
+	printCluster()
 }
