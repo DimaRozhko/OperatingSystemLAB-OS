@@ -16,6 +16,13 @@ func Lab4() {
 	}
 	buff, _ := ioutil.ReadAll(file)
 	fat16.TableCreator()
-	s := strings.Split(string(buff), "\n")
-	fmt.Println(s[0])
+	splitRow := strings.Split(string(buff), "\n")
+	for i, row := range splitRow {
+		if i > 0 {
+			break
+		}
+		fileInfo := strings.Split(row, "$")
+		fat16.AddFileToFAT16Table(fileInfo[0], fileInfo[1], fileInfo[2], fileInfo[3], fileInfo[4])
+	}
+	file.Close()
 }
