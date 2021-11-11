@@ -8,6 +8,7 @@ import (
 	"main/lab1"
 	"main/lab2"
 	"main/lab3"
+	"main/lab4"
 	"os"
 )
 
@@ -21,6 +22,8 @@ func main() {
 			lab2.Lab2()
 		case "lab3":
 			lab3.Lab3()
+		case "lab4":
+			lab4.Lab4()
 		}
 	}
 }
