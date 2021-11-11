@@ -22,7 +22,7 @@ const (
 	usedClusterLength      = 0x0F
 	firstUsedCluster       = 0x06 // only for first row in the table
 	defectClusterCode      = 0xF7
-	percentOfDefectCluster = 0
+	percentOfDefectCluster = 51
 	sizeCluster            = 2 // 2Kb
 
 )
@@ -54,7 +54,7 @@ func setDefectCluster() {
 	}
 }
 
-func printCluster() {
+func PrintCluster() {
 	fmt.Println("Cluster status:")
 	var codeHex string
 	for i := 0x00; i < usedClusterLength; i++ {
@@ -91,7 +91,7 @@ func TableCreator() {
 	fmt.Print("First line in \"used\" cluster:\t")
 	fmt.Println(fat16Table[currentRowFAT16Table][:usedClusterLength])
 	setDefectCluster()
-	printCluster()
+	PrintCluster()
 	clustereMap = make(map[clusterCode]clusterStorage)
 }
 
@@ -119,7 +119,7 @@ func setCluster() {
 			rowToUseNextCluster++
 			columnToUseNextCluster = 0
 		} else {
-			// columnToUseNextCluster++
+			columnToUseNextCluster++
 		}
 	}
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{rowToUseNextCluster, columnToUseNextCluster}
@@ -180,17 +180,19 @@ func CreateFileInFAT16Table(fileName string, attribute string, creationTime stri
 	fileSizeDec, _ := strconv.ParseInt(fileSizeHex, 16, 64)
 	moveFileToFAT16Table(int(fileSizeDec))
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
-	printCluster()
+	PrintCluster()
 	fileIds = append(fileIds, fileId)
 }
 
 func FindFileById(id int) {
-	fmt.Println(id)
 	var codeHex string
+	isFind := false
 	for i := 0; i < usedClusterLength; i++ {
 		for j := 0; j < usedClusterLength; j++ {
 			if value, ok := clustereMap[fat16Table[i][j]]; ok {
 				if value.id == id {
+					isFind = true
+					fmt.Print("FOUND: ")
 					fmt.Print("Cluster: ")
 					codeHex = strconv.FormatInt(int64(fat16Table[i][j].word[0]), 16)
 					if len(codeHex) == 1 {
@@ -203,6 +205,36 @@ func FindFileById(id int) {
 					}
 					fmt.Print(strings.ToUpper(codeHex))
 					fmt.Println("\t->\tFilaname: ", value.fileNeme)
+				}
+			}
+		}
+	}
+	if !isFind {
+		fmt.Printf("CANNOT MOUNF FILE BY ID = %d\n", id)
+	}
+}
+
+func DeleteFileById(id int) {
+	var codeHex string
+	for i := 0; i < usedClusterLength; i++ {
+		for j := 0; j < usedClusterLength; j++ {
+			if value, ok := clustereMap[fat16Table[i][j]]; ok {
+				if value.id == id {
+					fmt.Print("DELETED: ")
+					fmt.Print("Cluster: ")
+					codeHex = strconv.FormatInt(int64(fat16Table[i][j].word[0]), 16)
+					if len(codeHex) == 1 {
+						fmt.Print("0")
+					}
+					fmt.Print(strings.ToUpper(codeHex))
+					codeHex = strconv.FormatInt(int64(fat16Table[i][j].word[1]), 16)
+					if len(codeHex) == 1 {
+						fmt.Print("0")
+					}
+					fmt.Print(strings.ToUpper(codeHex))
+					fmt.Println("\t->\tFilaname: ", value.fileNeme)
+					delete(clustereMap, fat16Table[i][j])
+					fat16Table[i][j] = clusterCode{word: [2]byte{0x00, 0x00}}
 				}
 			}
 		}

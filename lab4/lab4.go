@@ -27,4 +27,7 @@ func Lab4() {
 	file.Close()
 	fmt.Println(fat16.GetAllFileId())
 	fat16.FindFileById(0)
+	fat16.DeleteFileById(1)
+	fat16.PrintCluster()
+	fat16.FindFileById(1)
 }
