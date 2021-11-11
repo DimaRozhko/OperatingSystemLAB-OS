@@ -124,18 +124,11 @@ func setCluster() {
 	}
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{rowToUseNextCluster, columnToUseNextCluster}
 	clustereMap[clusterCode{word: [2]byte{rowToUseNextCluster, columnToUseNextCluster}}] = clusterStorage{id: fileId, fileNeme: curentFileName}
-	// currentRowFAT16Table = rowToUseNextCluster
-	// currentColumnFAT16Table = columnToUseNextCluster
 }
 
 func moveFileToFAT16Table(fileSizeDec int) {
 
 	currentColumnFAT16Table++
-	// if currentColumnFAT16Table == usedClusterLength-1 {
-	// 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word = [2]byte{currentRowFAT16Table + 1, 0}
-	// 	currentColumnFAT16Table = 0
-	// 	currentRowFAT16Table++
-	// }
 	for ; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
 		for ; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
 			if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0xFF &&
@@ -175,7 +168,6 @@ func CreateFileInFAT16Table(fileName string, attribute string, creationTime stri
 	fmt.Println("\tAttribute: " + attribute)
 	fmt.Println("\tCreation date: " + creationDate)
 	fmt.Println("\tCreation time: " + creationTime)
-	// fmt.Println("\tCluster number: " + clusterNumHex)
 	fmt.Println("\tFile size: " + fileSizeHex)
 	fileSizeDec, _ := strconv.ParseInt(fileSizeHex, 16, 64)
 	moveFileToFAT16Table(int(fileSizeDec))
