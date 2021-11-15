@@ -324,4 +324,5 @@ INSERT_FIND:
 		fmt.Println("\t->\tFilaname: ", curentFileName)
 
 	}
+	fat16Table[currentRowFAT16Table][currentColumnFAT16Table-1].word = [2]byte{0xFF, 0xFF}
 }
