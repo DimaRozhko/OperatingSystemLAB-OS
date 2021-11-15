@@ -33,4 +33,7 @@ func Lab4() {
 	fmt.Println(fat16.GetAllFileId())
 	fat16.AddSomeClustersToFileById(0, 5)
 	fat16.PrintCluster()
+	fat16.CreateFileInFAT16Table("something.txt", "A", "00.00.0000", "00:00:00", "07")
+	fat16.AddSomeClustersToFileById(5, 5)
+	fat16.PrintCluster()
 }

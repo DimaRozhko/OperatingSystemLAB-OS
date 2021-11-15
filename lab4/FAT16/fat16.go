@@ -237,6 +237,10 @@ func DeleteFileById(id int) {
 func AddSomeClustersToFileById(id int, numClusters int) {
 
 	fileId = id
+	var (
+		saveCurrentRowFAT16Table    byte = currentRowFAT16Table
+		saveCurrentColumnFAT16Table byte = currentColumnFAT16Table
+	)
 FILENAME_FIND:
 	for currentRowFAT16Table = 0; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
 		for currentColumnFAT16Table = 0; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
@@ -325,4 +329,12 @@ INSERT_FIND:
 
 	}
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table-1].word = [2]byte{0xFF, 0xFF}
+
+	if saveCurrentRowFAT16Table > currentRowFAT16Table {
+		currentRowFAT16Table = saveCurrentRowFAT16Table
+		currentColumnFAT16Table = saveCurrentColumnFAT16Table
+	} else if saveCurrentRowFAT16Table == currentRowFAT16Table &&
+		saveCurrentColumnFAT16Table > currentColumnFAT16Table {
+		currentColumnFAT16Table = saveCurrentColumnFAT16Table
+	}
 }
