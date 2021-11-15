@@ -86,7 +86,7 @@ func TableCreator() {
 	currentColumnFAT16Table++
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0x00, 0x05}}
 	currentColumnFAT16Table++
-	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
+	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xFF}}
 	fmt.Println("INIT FAT16 TABLE -> Set necessary file to run OS:")
 	fmt.Print("First line in \"used\" cluster:\t")
 	fmt.Println(fat16Table[currentRowFAT16Table][:usedClusterLength])
@@ -172,6 +172,7 @@ func CreateFileInFAT16Table(fileName string, attribute string, creationTime stri
 	fileSizeDec, _ := strconv.ParseInt(fileSizeHex, 16, 64)
 	moveFileToFAT16Table(int(fileSizeDec))
 	fat16Table[currentRowFAT16Table][currentColumnFAT16Table] = clusterCode{word: [2]byte{0xFF, 0xff}}
+
 	PrintCluster()
 	fileIds = append(fileIds, fileId)
 }
@@ -230,5 +231,97 @@ func DeleteFileById(id int) {
 				}
 			}
 		}
+	}
+}
+
+func AddSomeClustersToFileById(id int, numClusters int) {
+
+	fileId = id
+FILENAME_FIND:
+	for currentRowFAT16Table = 0; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
+		for currentColumnFAT16Table = 0; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
+			if value, ok := clustereMap[fat16Table[currentRowFAT16Table][currentColumnFAT16Table]]; ok {
+				if value.id == id {
+					curentFileName = value.fileNeme
+					break FILENAME_FIND
+				}
+			}
+		}
+		currentColumnFAT16Table = 0
+	}
+EOF_FIND:
+	for ; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
+		if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0x00 &&
+			fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == 0x00 {
+			break EOF_FIND
+		}
+		for ; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
+			if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0x00 &&
+				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == 0x00 {
+				break EOF_FIND
+			}
+		}
+		currentColumnFAT16Table = 0
+	}
+	var saveRow byte = currentRowFAT16Table
+	var saveColumn byte = currentColumnFAT16Table
+	if saveColumn != 0 {
+		saveColumn--
+	}
+INSERT_FIND:
+	for counter := numClusters; currentRowFAT16Table < usedClusterLength; currentRowFAT16Table++ {
+		if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0x00 &&
+			fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == 0x00 {
+			if counter >= 0 {
+				counter--
+			} else {
+				break INSERT_FIND
+			}
+		} else {
+			counter = numClusters
+		}
+		for ; currentColumnFAT16Table < usedClusterLength; currentColumnFAT16Table++ {
+			if fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[0] == 0x00 &&
+				fat16Table[currentRowFAT16Table][currentColumnFAT16Table].word[1] == 0x00 {
+				if counter >= 0 {
+					counter--
+				} else {
+					break INSERT_FIND
+				}
+			} else {
+				counter = numClusters
+			}
+		}
+	}
+	for counter := numClusters; counter > 0; counter-- {
+		if currentRowFAT16Table%usedClusterLength == 0 {
+			currentRowFAT16Table--
+		}
+		currentColumnFAT16Table--
+	}
+	var codeHex string
+	fat16Table[saveRow][saveColumn].word = [2]byte{currentRowFAT16Table, currentColumnFAT16Table}
+	clustereMap[clusterCode{word: [2]byte{saveRow, saveColumn}}] = clusterStorage{id: fileId, fileNeme: curentFileName}
+	for counter := numClusters; counter > 0; counter-- {
+		if currentRowFAT16Table%usedClusterLength == 0 {
+			currentRowFAT16Table++
+		}
+		currentColumnFAT16Table++
+		fat16Table[currentRowFAT16Table][currentColumnFAT16Table-1].word = [2]byte{currentRowFAT16Table, currentColumnFAT16Table}
+		clustereMap[clusterCode{word: [2]byte{currentRowFAT16Table, currentColumnFAT16Table}}] = clusterStorage{id: fileId, fileNeme: curentFileName}
+		fmt.Print("ADD: ")
+		fmt.Print("Cluster: ")
+		codeHex = strconv.FormatInt(int64(fat16Table[currentRowFAT16Table][currentColumnFAT16Table-1].word[0]), 16)
+		if len(codeHex) == 1 {
+			fmt.Print("0")
+		}
+		fmt.Print(strings.ToUpper(codeHex))
+		codeHex = strconv.FormatInt(int64(fat16Table[currentRowFAT16Table][currentColumnFAT16Table-1].word[1]), 16)
+		if len(codeHex) == 1 {
+			fmt.Print("0")
+		}
+		fmt.Print(strings.ToUpper(codeHex))
+		fmt.Println("\t->\tFilaname: ", curentFileName)
+
 	}
 }

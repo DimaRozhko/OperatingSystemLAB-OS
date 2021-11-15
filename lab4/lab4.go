@@ -30,4 +30,7 @@ func Lab4() {
 	fat16.DeleteFileById(1)
 	fat16.PrintCluster()
 	fat16.FindFileById(1)
+	fmt.Println(fat16.GetAllFileId())
+	fat16.AddSomeClustersToFileById(0, 5)
+	fat16.PrintCluster()
 }
